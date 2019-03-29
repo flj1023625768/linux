@@ -1,0 +1,5 @@
+alter table table_name convert to character set utf8;
+表和字段的字符都会修改
+在mysql-5.7.13上遇到一个问题，有两个表的两个字符串不能修改，
+解决办法：
+    手动导出表的sql文件，修改字符为utf8,导入表。
