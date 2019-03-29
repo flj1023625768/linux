@@ -1,0 +1,10 @@
+访问自定义的网站，出现两个问题
+1.中文文件名乱码，
+2.由于目录名过长，被截断，后面出现?
+
+1.添加
+    IndexOptions Charset=UTF-8  
+2.修改
+    /etc/httpd/conf.d/autoindex.conf或者httpd/httpd.conf中
+    “FancyIndexing HTMLTable VersionSort”
+    FancyIndexing HTMLTable VersionSort NameWidth=* 
