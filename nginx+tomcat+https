@@ -1,0 +1,61 @@
+Nginx + Tomcat 使用 Https
+
+Java
+Nginx 作为前端反向代理或者负载均衡，Tomcat 不需要自己处理 https，https 由 Nginx 处理:
+用户首先和 Nginx 建立连接，完成 SSL 握手
+而后 Nginx 作为代理以 http 协议将请求转发给 Tomcat 处理
+Nginx 再把 Tomcat 的输出通过 SSL 加密发回给用户
+Tomcat 只是在处理 http 请求而已 (默认监听 8080 端口)。因此，这种情况下不需要配置 Tomcat 的 SSL，只需要配置 Nginx 的 SSL，Tomcat 和 Nginx 需要配置以下几项:
+Nginx 中启用 https:
+
+http {
+    include      mime.types;
+    default_type text/html;
+    gzip         on;
+    gzip_types   text/css text/x-component application/x-javascript application/javascript text/javascript text/x-js text/richtext image/svg+xml text/plain text/xsd text/xsl text/xml image/x-icon;
+    sendfile     on;
+
+    # Tomcat 服务器集群
+    upstream app_server {
+        server 127.0.0.1:8080 weight=4;
+        server 127.0.0.1:8081 weight=2;
+        server 127.0.0.1:8082 weight=1;
+    }
+
+    server {
+        listen      443 ssl; # https 的默认端口是 443
+        charset     utf-8;
+        server_name www.xtuer.com; # host_name of URL
+
+        # 启用 https
+        # ssl on; # deprecated, use listen 443 ssl instead
+        ssl_certificate     cert/server.crt;
+        ssl_certificate_key cert/server.key;
+
+        location / {
+            proxy_redirect   off;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            # 把 https 的协议告知 Tomcat，否则 Tomcat 可能认为是 http 的请求
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            # 请求转发给 Tomcat 集群处理
+            proxy_pass http://app_server;
+        }
+    }
+}
+关键是以下几项:
+listen port ssl
+ssl_certificate
+ssl_certificate_key
+X-Forwarded-Proto
+Tomcat 的 server.xml 的 Host 中配置 Valve:
+
+<Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true">
+    <Valve className="org.apache.catalina.valves.RemoteIpValve" remoteIpHeader="X-Forwarded-For" protocolHeader="X-Forwarded-Proto" protocolHeaderHttpsValue="https"/>
+</Host>
+X-Forwarded-Proto 是为了正确地识别实际用户发出的协议是 http 还是 https
+X-Forwarded-For 是为了获得实际用户的 IP
+如果不配置它们，则在 redirect 的时候仍然会使用 http 而不是 https
