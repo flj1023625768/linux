@@ -59,3 +59,5 @@ Tomcat 的 server.xml 的 Host 中配置 Valve:
 X-Forwarded-Proto 是为了正确地识别实际用户发出的协议是 http 还是 https
 X-Forwarded-For 是为了获得实际用户的 IP
 如果不配置它们，则在 redirect 的时候仍然会使用 http 而不是 https
+
+如果内网带端口转发的话，后端redirect的时候也要带上端口
